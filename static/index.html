@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task Dashboard</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f0f2f5;
+    color: #1a1a2e;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    background: #1a1a2e;
+    color: #fff;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,.3);
+  }
+  header h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: .5px; }
+  #clock { font-size: .85rem; color: #a0aec0; }
+  #sync-btn {
+    background: #2d3748;
+    color: #e2e8f0;
+    border: 1px solid #4a5568;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: .8rem;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  #sync-btn:hover { background: #4a5568; }
+  #sync-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* ── Add Task Form ── */
+  #add-form-wrap {
+    background: #fff;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 16px 24px;
+  }
+  #add-form-wrap summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: .95rem;
+    color: #2d3748;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #add-form-wrap summary::before {
+    content: "＋";
+    font-size: 1rem;
+    color: #667eea;
+  }
+  #add-form {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  #add-form .full { grid-column: 1 / -1; }
+  #add-form input, #add-form textarea, #add-form select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    font-size: .88rem;
+    background: #f7fafc;
+    transition: border .15s;
+  }
+  #add-form input:focus, #add-form textarea:focus, #add-form select:focus {
+    outline: none;
+    border-color: #667eea;
+    background: #fff;
+  }
+  #add-form textarea { resize: vertical; min-height: 60px; }
+  .toggle-row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: .88rem;
+    cursor: pointer;
+    user-select: none;
+  }
+  .toggle-label input[type=checkbox] {
+    width: 16px;
+    height: 16px;
+    accent-color: #667eea;
+  }
+  #add-form button[type=submit] {
+    grid-column: 1 / -1;
+    background: #667eea;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  #add-form button[type=submit]:hover { background: #5a67d8; }
+
+  /* ── Three-column layout ── */
+  #columns {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr 1.5fr;
+    gap: 20px;
+    padding: 20px 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    #columns { grid-template-columns: 1fr; }
+    #add-form { grid-template-columns: 1fr; }
+  }
+
+  .column-header {
+    font-size: .95rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .column-header .count {
+    background: #e2e8f0;
+    color: #4a5568;
+    border-radius: 12px;
+    padding: 1px 8px;
+    font-size: .78rem;
+  }
+
+  /* ── Schedule column ── */
+  #col-schedule {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px;
+  }
+  .schedule-item {
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f2f5;
+    font-size: .84rem;
+  }
+  .schedule-item:last-child { border-bottom: none; }
+  .schedule-date {
+    font-size: .72rem;
+    font-weight: 700;
+    color: #667eea;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .schedule-title {
+    font-weight: 600;
+    color: #2d3748;
+    margin-top: 2px;
+    line-height: 1.3;
+  }
+  .schedule-q { font-size: .68rem; color: #a0aec0; margin-top: 2px; }
+  .schedule-today { background: #ebf4ff; border-radius: 6px; padding: 6px 8px; margin: -4px -4px 4px; }
+  .schedule-placeholder {
+    font-size: .8rem;
+    color: #a0aec0;
+    border: 1px dashed #cbd5e0;
+    border-radius: 6px;
+    padding: 10px;
+    text-align: center;
+    margin-top: 10px;
+  }
+
+  /* ── Quadrant sections ── */
+  .quadrant-group { margin-bottom: 12px; }
+  .quadrant-label {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-bottom: 6px;
+    display: inline-block;
+  }
+  .q1-label { background: #fed7d7; color: #c53030; }
+  .q2-label { background: #c6f6d5; color: #276749; }
+  .q3-label { background: #fefcbf; color: #744210; }
+  .q4-label { background: #e2e8f0; color: #4a5568; }
+
+  /* ── Task Card ── */
+  .task-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    transition: box-shadow .15s;
+  }
+  .task-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+  .task-card.complete { opacity: .5; }
+
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .task-title {
+    font-weight: 600;
+    font-size: .9rem;
+    line-height: 1.3;
+    flex: 1;
+  }
+  .task-card.complete .task-title { text-decoration: line-through; }
+
+  .badge-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-top: 5px;
+    flex-wrap: wrap;
+  }
+  .badge {
+    font-size: .7rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 10px;
+  }
+  .badge-q1 { background: #fed7d7; color: #c53030; }
+  .badge-q2 { background: #c6f6d5; color: #276749; }
+  .badge-q3 { background: #fefcbf; color: #744210; }
+  .badge-q4 { background: #e2e8f0; color: #4a5568; }
+  .badge-date { background: #ebf4ff; color: #2b6cb0; font-weight: 500; }
+  .badge-source { background: #faf5ff; color: #6b46c1; font-weight: 500; }
+  .badge-recur { background: #e6fffa; color: #276749; font-weight: 500; }
+
+  .task-desc {
+    font-size: .82rem;
+    color: #718096;
+    margin-top: 5px;
+    line-height: 1.4;
+  }
+  .task-video {
+    font-size: .8rem;
+    color: #667eea;
+    display: inline-block;
+    margin-top: 4px;
+    word-break: break-all;
+  }
+
+  .card-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .card-actions button {
+    font-size: .75rem;
+    padding: 4px 10px;
+    border-radius: 5px;
+    border: 1px solid;
+    cursor: pointer;
+    font-weight: 600;
+    transition: opacity .1s;
+  }
+  .card-actions button:hover { opacity: .75; }
+  .btn-move { background: #ebf4ff; color: #2b6cb0; border-color: #bee3f8; }
+  .btn-complete { background: #c6f6d5; color: #276749; border-color: #9ae6b4; }
+  .btn-delete { background: #fff5f5; color: #c53030; border-color: #fed7d7; }
+  .btn-undo { background: #faf5ff; color: #6b46c1; border-color: #d6bcfa; }
+
+  .empty-state {
+    text-align: center;
+    color: #a0aec0;
+    font-size: .85rem;
+    padding: 32px 0;
+  }
+
+  /* ── Done section ── */
+  #done-wrap {
+    max-width: 1400px;
+    margin: 0 auto 32px;
+    padding: 0 24px;
+  }
+  #done-details {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  #done-details > summary {
+    cursor: pointer;
+    font-weight: 700;
+    font-size: .9rem;
+    color: #4a5568;
+    padding: 12px 16px;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  #done-details > summary::before { content: "✓"; color: #68d391; }
+  #done-details[open] > summary { border-bottom: 1px solid #e2e8f0; }
+  #done-list {
+    padding: 12px 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 8px;
+  }
+  .done-card {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+    padding: 10px 12px;
+  }
+  .done-title {
+    font-weight: 600;
+    font-size: .88rem;
+    color: #718096;
+    text-decoration: line-through;
+    line-height: 1.3;
+  }
+  .done-meta {
+    font-size: .75rem;
+    color: #a0aec0;
+    margin-top: 3px;
+  }
+  .done-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .done-actions button {
+    font-size: .72rem;
+    padding: 3px 9px;
+    border-radius: 5px;
+    border: 1px solid;
+    cursor: pointer;
+    font-weight: 600;
+    transition: opacity .1s;
+  }
+  .done-actions button:hover { opacity: .75; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Task Dashboard</h1>
+  <span id="clock"></span>
+  <button id="sync-btn" onclick="runSync()">⟳ Sync</button>
+</header>
+
+<div id="add-form-wrap">
+  <details>
+    <summary>Add New Task</summary>
+    <form id="add-form" onsubmit="submitTask(event)">
+      <input class="full" type="text" id="f-title" placeholder="Task title *" required>
+      <textarea class="full" id="f-desc" placeholder="Description (optional)"></textarea>
+      <input type="date" id="f-date" placeholder="Due date (optional)">
+      <input type="url" id="f-video" placeholder="Video URL (optional)">
+      <div class="toggle-row full">
+        <label class="toggle-label">
+          <input type="checkbox" id="f-importance"> Important
+        </label>
+        <select id="f-recurrence">
+          <option value="">No recurrence</option>
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="biweekly">Biweekly</option>
+        </select>
+        <select id="f-pool">
+          <option value="human">My Tasks</option>
+          <option value="agent">Agent Tasks</option>
+        </select>
+      </div>
+      <button type="submit">Add Task</button>
+    </form>
+  </details>
+</div>
+
+<div id="columns">
+  <!-- Schedule column -->
+  <div id="col-schedule">
+    <div class="column-header">📅 Schedule</div>
+    <div id="list-schedule"></div>
+    <div class="schedule-placeholder" id="cal-placeholder">Hit ⟳ Sync to pull Gmail &amp; Calendar</div>
+  </div>
+
+  <!-- My Tasks -->
+  <div id="col-human">
+    <div class="column-header">My Tasks <span class="count" id="count-human">0</span></div>
+    <div id="list-human"></div>
+  </div>
+
+  <!-- Agent Tasks -->
+  <div id="col-agent">
+    <div class="column-header">🤖 Agent Tasks <span class="count" id="count-agent">0</span></div>
+    <div id="list-agent"></div>
+  </div>
+</div>
+
+<!-- Done section -->
+<div id="done-wrap">
+  <details id="done-details">
+    <summary id="done-summary">Done (0)</summary>
+    <div id="done-list"></div>
+  </details>
+</div>
+
+<script>
+let allTasks = [];
+
+// ── Clock ─────────────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  document.getElementById("clock").textContent =
+    now.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }) +
+    " · " + now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── API helpers ───────────────────────────────────────────────────
+async function api(path, method = "GET", body = null) {
+  const opts = { method, headers: { "Content-Type": "application/json" } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(path, opts);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+// ── Load & render ─────────────────────────────────────────────────
+async function loadTasks() {
+  allTasks = await api("/tasks");
+  render();
+}
+
+const Q_ORDER = { Q1: 0, Q2: 1, Q3: 2, Q4: 3 };
+const Q_LABELS = {
+  Q1: "Q1 · Do First",
+  Q2: "Q2 · Schedule",
+  Q3: "Q3 · Delegate",
+  Q4: "Q4 · Someday"
+};
+const Q_CLASS = { Q1: "q1-label", Q2: "q2-label", Q3: "q3-label", Q4: "q4-label" };
+const BADGE_Q = { Q1: "badge-q1", Q2: "badge-q2", Q3: "badge-q3", Q4: "badge-q4" };
+
+function sortTasks(tasks) {
+  return tasks.sort((a, b) => {
+    const qDiff = Q_ORDER[a.eisenhower_quadrant] - Q_ORDER[b.eisenhower_quadrant];
+    if (qDiff !== 0) return qDiff;
+    return (a.date || "9999").localeCompare(b.date || "9999");
+  });
+}
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function render() {
+  renderSchedule();
+  ["human", "agent"].forEach(pool => renderPool(pool));
+  renderDone();
+}
+
+function renderSchedule() {
+  const today = todayStr();
+  // All pending tasks with a date, sorted by date ascending
+  const dated = allTasks
+    .filter(t => t.date && t.status === "pending")
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  const container = document.getElementById("list-schedule");
+
+  if (dated.length === 0) {
+    container.innerHTML = `<div class="empty-state" style="padding:16px 0">No dated tasks</div>`;
+    return;
+  }
+
+  container.innerHTML = dated.map(t => {
+    const isToday = t.date === today;
+    const label = isToday ? "Today" : formatScheduleDate(t.date);
+    return `
+      <div class="schedule-item${isToday ? " schedule-today" : ""}">
+        <div class="schedule-date">${label}</div>
+        <div class="schedule-title">${esc(t.title)}</div>
+        <div class="schedule-q">${t.eisenhower_quadrant} · ${t.pool === "agent" ? "Agent" : "Mine"}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+function formatScheduleDate(dateStr) {
+  const d = new Date(dateStr + "T00:00:00");
+  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+}
+
+function renderPool(pool) {
+  const tasks = sortTasks(
+    allTasks.filter(t => t.pool === pool && t.source !== "calendar" && t.status === "pending")
+  );
+
+  document.getElementById(`count-${pool}`).textContent = tasks.length;
+
+  const container = document.getElementById(`list-${pool}`);
+  if (tasks.length === 0) {
+    container.innerHTML = `<div class="empty-state">No tasks yet</div>`;
+    return;
+  }
+
+  const groups = {};
+  tasks.forEach(t => {
+    const q = t.eisenhower_quadrant || "Q4";
+    if (!groups[q]) groups[q] = [];
+    groups[q].push(t);
+  });
+
+  container.innerHTML = ["Q1", "Q2", "Q3", "Q4"]
+    .filter(q => groups[q])
+    .map(q => `
+      <div class="quadrant-group">
+        <div class="quadrant-label ${Q_CLASS[q]}">${Q_LABELS[q]}</div>
+        ${groups[q].map(renderCard).join("")}
+      </div>
+    `).join("");
+}
+
+function renderCard(task) {
+  const moveLabel = task.pool === "human" ? "→ Agent" : "← Mine";
+  const completeBtn = task.status === "pending"
+    ? `<button class="btn-complete" onclick="completeTask('${task.id}')">✓ Done</button>`
+    : `<button class="btn-undo" onclick="undoTask('${task.id}')">↩ Undo</button>`;
+
+  return `
+    <div class="task-card ${task.status === "complete" ? "complete" : ""}">
+      <div class="card-top">
+        <div class="task-title">${esc(task.title)}</div>
+      </div>
+      <div class="badge-row">
+        <span class="badge ${BADGE_Q[task.eisenhower_quadrant || 'Q4']}">${task.eisenhower_quadrant || 'Q4'}</span>
+        ${task.date ? `<span class="badge badge-date">📅 ${task.date}</span>` : ""}
+        ${task.recurrence ? `<span class="badge badge-recur">↻ ${task.recurrence}</span>` : ""}
+        ${task.source !== "manual" ? `<span class="badge badge-source">${task.source}</span>` : ""}
+      </div>
+      ${task.description ? `<div class="task-desc">${esc(task.description)}</div>` : ""}
+      ${task.video_url ? `<a class="task-video" href="${esc(task.video_url)}" target="_blank">▶ Video</a>` : ""}
+      <div class="card-actions">
+        <button class="btn-move" onclick="moveTask('${task.id}')">${moveLabel}</button>
+        ${completeBtn}
+        <button class="btn-delete" onclick="deleteTask('${task.id}')">✕</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderDone() {
+  const done = allTasks
+    .filter(t => t.status === "complete" && t.source !== "calendar")
+    .sort((a, b) => (b.completed_at || "").localeCompare(a.completed_at || ""));
+
+  const summary = document.getElementById("done-summary");
+  const list = document.getElementById("done-list");
+  summary.textContent = `Done (${done.length})`;
+
+  if (done.length === 0) {
+    list.innerHTML = `<div class="empty-state" style="padding:16px 0">No completed tasks</div>`;
+    return;
+  }
+  list.innerHTML = done.map(renderDoneCard).join("");
+}
+
+function renderDoneCard(task) {
+  const completedLabel = task.completed_at
+    ? new Date(task.completed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    : "";
+  return `
+    <div class="done-card">
+      <div class="done-title">${esc(task.title)}</div>
+      ${completedLabel ? `<div class="done-meta">Completed ${completedLabel}</div>` : ""}
+      <div class="done-actions">
+        <button class="btn-undo" onclick="undoTask('${task.id}')">↩ Undo</button>
+        <button class="btn-delete" onclick="deleteTask('${task.id}')">✕ Delete</button>
+      </div>
+    </div>
+  `;
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+// ── Actions ───────────────────────────────────────────────────────
+async function submitTask(e) {
+  e.preventDefault();
+  const body = {
+    title: document.getElementById("f-title").value.trim(),
+    description: document.getElementById("f-desc").value.trim(),
+    date: document.getElementById("f-date").value || null,
+    video_url: document.getElementById("f-video").value.trim() || null,
+    importance: document.getElementById("f-importance").checked,
+    recurrence: document.getElementById("f-recurrence").value || null,
+    pool: document.getElementById("f-pool").value,
+  };
+  await api("/tasks", "POST", body);
+  e.target.reset();
+  await loadTasks();
+}
+
+async function moveTask(id) {
+  await api(`/tasks/${id}/move`, "POST");
+  await loadTasks();
+}
+
+async function completeTask(id) {
+  await api(`/tasks/${id}`, "PUT", { status: "complete" });
+  await loadTasks();
+}
+
+async function undoTask(id) {
+  await api(`/tasks/${id}`, "PUT", { status: "pending", completed_at: null });
+  await loadTasks();
+}
+
+async function deleteTask(id) {
+  if (!confirm("Delete this task?")) return;
+  await api(`/tasks/${id}`, "DELETE");
+  await loadTasks();
+}
+
+async function runSync() {
+  const btn = document.getElementById("sync-btn");
+  btn.disabled = true;
+  btn.textContent = "⟳ Syncing…";
+  try {
+    const res = await api("/sync", "POST");
+    btn.textContent = "✓ Synced";
+    await loadTasks();
+    setTimeout(() => { btn.textContent = "⟳ Sync"; btn.disabled = false; }, 3000);
+  } catch (err) {
+    btn.textContent = "✕ Failed";
+    alert("Sync failed: " + err.message);
+    setTimeout(() => { btn.textContent = "⟳ Sync"; btn.disabled = false; }, 3000);
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+loadTasks();
+</script>
+</body>
+</html>

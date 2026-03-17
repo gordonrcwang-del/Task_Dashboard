@@ -1,0 +1,21 @@
+# Credentials & secrets
+google_credentials.json
+google_token.json
+*.env
+.env*
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+
+# Logs & runtime
+tasks.log
+tasks.lock
+
+# OS
+.DS_Store
