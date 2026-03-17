@@ -17,5 +17,8 @@ venv/
 tasks.log
 tasks.lock
 
+# Agent outputs (local only — sort manually)
+deliverables/
+
 # OS
 .DS_Store
