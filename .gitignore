@@ -13,8 +13,13 @@ __pycache__/
 venv/
 .venv/
 
+# Private data
+tasks.json
+com.gordonrcwang.agentrun.plist
+
 # Logs & runtime
 tasks.log
+agent_run.log
 tasks.lock
 
 # Agent outputs (local only — sort manually)
